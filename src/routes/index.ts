@@ -2,6 +2,8 @@ import type { Hono } from 'hono';
 import { signUp } from './auth/signup.js';
 import { logger } from 'hono/logger';
 import { jwt } from 'hono/jwt';
+import { signIn } from './auth/signin.js';
+import { users } from './users/index.js';
 
 export const routes = (app: Hono) => {
 	app.use(logger());
@@ -11,6 +13,9 @@ export const routes = (app: Hono) => {
 	});
 
 	app.route('/api/auth/signup', signUp);
+	app.route('/api/auth/signin', signIn);
 
 	app.use('/api/*', jwt({ secret: process.env.JWT_SECRET }));
+
+	app.route('/api/users', users);
 };
