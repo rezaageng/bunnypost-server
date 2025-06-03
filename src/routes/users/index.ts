@@ -103,3 +103,36 @@ users.get('/me', async (c) => {
 		},
 	});
 });
+
+users.get('/:username', async (c) => {
+	const username = c.req.param('username');
+
+	const row = db.query.usersTable.findFirst({
+		where: (table) => eq(table.username, username),
+	});
+	const user = await row;
+
+	if (!user) {
+		return c.json(
+			{
+				success: false,
+				message: 'User not found',
+			},
+			404,
+		);
+	}
+
+	return c.json({
+		success: true,
+		message: 'User fetched successfully',
+		data: {
+			id: user.id,
+			email: user.email,
+			username: user.username,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			createdAt: user.createdAt,
+			updatedAt: user.updatedAt,
+		},
+	});
+});
