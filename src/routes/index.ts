@@ -5,6 +5,8 @@ import { jwt } from 'hono/jwt';
 import { signIn } from './auth/signin.js';
 import { users } from './users/index.js';
 import { posts } from './posts/index.js';
+import { comments } from './comments/index.js';
+import { likes } from './likes/index.js';
 
 export const routes = (app: Hono) => {
 	app.use(logger());
@@ -20,4 +22,6 @@ export const routes = (app: Hono) => {
 
 	app.route('/api/users', users);
 	app.route('/api/posts', posts);
+	app.route('/api/comments', comments);
+	app.route('/api/likes', likes);
 };
