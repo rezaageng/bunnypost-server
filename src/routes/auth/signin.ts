@@ -53,7 +53,7 @@ signIn.post(
 		}
 
 		const payload = {
-			email,
+			id: user.id,
 			exp: Math.floor(Date.now() / 1000) + 60 * 60, // Token valid for 1 hour
 		};
 

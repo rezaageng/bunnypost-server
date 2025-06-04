@@ -45,16 +45,19 @@ signUp.post(
 			);
 		}
 
-		await db.insert(usersTable).values({
-			email,
-			username,
-			firstName,
-			lastName,
-			password: hashedPassword,
-		});
+		const user = await db
+			.insert(usersTable)
+			.values({
+				email,
+				username,
+				firstName,
+				lastName,
+				password: hashedPassword,
+			})
+			.returning();
 
 		const payload = {
-			email,
+			id: user[0].id,
 			exp: Math.floor(Date.now() / 1000) + 60 * 60, // Token valid for 1 hour
 		};
 
