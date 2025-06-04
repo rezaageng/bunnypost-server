@@ -14,6 +14,8 @@ export const usersTable = pgTable('users', {
 
 export const usersRelation = relations(usersTable, ({ many }) => ({
 	posts: many(postsTable),
+	comments: many(commentsTable),
+	likes: many(likesTable),
 }));
 
 export const postsTable = pgTable('posts', {
@@ -31,6 +33,7 @@ export const postsRelation = relations(postsTable, ({ one, many }) => ({
 		references: [usersTable.id],
 	}),
 	comments: many(commentsTable),
+	likes: many(likesTable),
 }));
 
 export const commentsTable = pgTable('comments', {
@@ -46,5 +49,28 @@ export const commentsRelation = relations(commentsTable, ({ one }) => ({
 	post: one(postsTable, {
 		fields: [commentsTable.postId],
 		references: [postsTable.id],
+	}),
+	author: one(usersTable, {
+		fields: [commentsTable.authorId],
+		references: [usersTable.id],
+	}),
+}));
+
+export const likesTable = pgTable('likes', {
+	id: uuid().notNull().primaryKey().defaultRandom(),
+	postId: uuid('post_id').notNull(),
+	authorId: uuid('author_id').notNull(),
+	createdAt: timestamp('created_at').notNull().defaultNow(),
+	updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const likesRelation = relations(likesTable, ({ one }) => ({
+	post: one(postsTable, {
+		fields: [likesTable.postId],
+		references: [postsTable.id],
+	}),
+	author: one(usersTable, {
+		fields: [likesTable.authorId],
+		references: [usersTable.id],
 	}),
 }));

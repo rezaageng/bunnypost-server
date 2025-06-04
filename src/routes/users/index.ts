@@ -73,11 +73,35 @@ users.get('/', async (c) => {
 users.get('/me', async (c) => {
 	const payload = c.get('jwtPayload');
 
-	const row = db.query.usersTable.findFirst({
+	const user = await db.query.usersTable.findFirst({
 		where: (table) => eq(table.email, payload.email),
+		with: {
+			posts: {
+				columns: {
+					id: true,
+					content: true,
+					title: true,
+					createdAt: true,
+					updatedAt: true,
+				},
+			},
+			likes: {
+				columns: {
+					id: true,
+					postId: true,
+				},
+			},
+			comments: {
+				columns: {
+					id: true,
+					content: true,
+					postId: true,
+					createdAt: true,
+					updatedAt: true,
+				},
+			},
+		},
 	});
-
-	const user = await row;
 
 	if (!user) {
 		return c.json(
@@ -100,6 +124,9 @@ users.get('/me', async (c) => {
 			lastName: user.lastName,
 			createdAt: user.createdAt,
 			updatedAt: user.updatedAt,
+			posts: user.posts,
+			likes: user.likes,
+			comments: user.comments,
 		},
 	});
 });
@@ -107,10 +134,35 @@ users.get('/me', async (c) => {
 users.get('/:username', async (c) => {
 	const username = c.req.param('username');
 
-	const row = db.query.usersTable.findFirst({
+	const user = await db.query.usersTable.findFirst({
 		where: (table) => eq(table.username, username),
+		with: {
+			posts: {
+				columns: {
+					id: true,
+					content: true,
+					title: true,
+					createdAt: true,
+					updatedAt: true,
+				},
+			},
+			likes: {
+				columns: {
+					id: true,
+					postId: true,
+				},
+			},
+			comments: {
+				columns: {
+					id: true,
+					content: true,
+					postId: true,
+					createdAt: true,
+					updatedAt: true,
+				},
+			},
+		},
 	});
-	const user = await row;
 
 	if (!user) {
 		return c.json(
@@ -133,6 +185,9 @@ users.get('/:username', async (c) => {
 			lastName: user.lastName,
 			createdAt: user.createdAt,
 			updatedAt: user.updatedAt,
+			posts: user.posts,
+			likes: user.likes,
+			comments: user.comments,
 		},
 	});
 });
