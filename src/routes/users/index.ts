@@ -74,7 +74,7 @@ users.get('/me', async (c) => {
 	const payload = c.get('jwtPayload');
 
 	const user = await db.query.usersTable.findFirst({
-		where: (table) => eq(table.email, payload.email),
+		where: (table) => eq(table.id, payload.id),
 		with: {
 			posts: {
 				columns: {
