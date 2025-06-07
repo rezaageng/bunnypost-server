@@ -2,6 +2,9 @@ import { Hono } from 'hono';
 import { db } from '../../db/index.js';
 import { eq, like, or, count } from 'drizzle-orm';
 import { usersTable } from '../../db/schema.js';
+import { zValidator } from '@hono/zod-validator';
+import { userUpdateSchema } from '../../schemas/user-schema.js';
+import { v2 as cloudinary } from 'cloudinary';
 
 export const users = new Hono();
 
@@ -11,7 +14,7 @@ users.get('/', async (c) => {
 	const limit = Number.parseInt(c.req.query('limit') || '10', 10);
 	const offset = (page - 1) * limit;
 
-	const row = db.query.usersTable.findMany({
+	const users = await db.query.usersTable.findMany({
 		where: searchParams
 			? (table) =>
 					or(
@@ -36,8 +39,6 @@ users.get('/', async (c) => {
 					)
 				: undefined,
 		);
-
-	const users = await row;
 
 	if (users.length === 0) {
 		return c.json(
@@ -64,6 +65,9 @@ users.get('/', async (c) => {
 			username: user.username,
 			firstName: user.firstName,
 			lastName: user.lastName,
+			bio: user.bio,
+			profilePicture: user.profilePicture,
+			header: user.header,
 			createdAt: user.createdAt,
 			updatedAt: user.updatedAt,
 		})),
@@ -122,6 +126,9 @@ users.get('/me', async (c) => {
 			username: user.username,
 			firstName: user.firstName,
 			lastName: user.lastName,
+			bio: user.bio,
+			profilePicture: user.profilePicture,
+			header: user.header,
 			createdAt: user.createdAt,
 			updatedAt: user.updatedAt,
 			posts: user.posts,
@@ -183,6 +190,9 @@ users.get('/:username', async (c) => {
 			username: user.username,
 			firstName: user.firstName,
 			lastName: user.lastName,
+			bio: user.bio,
+			profilePicture: user.profilePicture,
+			header: user.header,
 			createdAt: user.createdAt,
 			updatedAt: user.updatedAt,
 			posts: user.posts,
@@ -191,3 +201,140 @@ users.get('/:username', async (c) => {
 		},
 	});
 });
+
+users.put(
+	'/:id',
+	zValidator('form', userUpdateSchema, (result, c) => {
+		if (!result.success) {
+			return c.json(
+				{
+					success: false,
+					message: 'Invalid input',
+					errors: result.error,
+				},
+				400,
+			);
+		}
+	}),
+	async (c) => {
+		const payload = c.get('jwtPayload');
+		const id = c.req.param('id');
+
+		const {
+			username,
+			firstName,
+			lastName,
+			bio,
+			profilePicture,
+			header,
+			email,
+		} = c.req.valid('form');
+
+		let profilePictureUrl = '';
+		let headerUrl = '';
+
+		const user = await db.query.usersTable.findFirst({
+			where: (table) => eq(table.id, id),
+		});
+
+		if (!user) {
+			return c.json(
+				{
+					success: false,
+					message: 'User not found',
+				},
+				404,
+			);
+		}
+
+		if (user.id !== payload.id) {
+			return c.json(
+				{
+					success: false,
+					message: 'You are not authorized to update this user',
+				},
+				403,
+			);
+		}
+
+		if (profilePicture) {
+			try {
+				const profilePictureUpload = await cloudinary.uploader.upload(
+					profilePicture,
+					{
+						folder: 'profile_pictures',
+						allowed_formats: ['jpg', 'png', 'jpeg'],
+					},
+				);
+				profilePictureUrl = profilePictureUpload.secure_url;
+			} catch (_e) {
+				return c.json(
+					{
+						success: false,
+						message: 'Error uploading profile picture',
+					},
+					500,
+				);
+			}
+		}
+
+		if (header) {
+			try {
+				const headerUpload = await cloudinary.uploader.upload(header, {
+					folder: 'headers',
+					allowed_formats: ['jpg', 'png', 'jpeg'],
+				});
+				headerUrl = headerUpload.secure_url;
+			} catch (_e) {
+				return c.json(
+					{
+						success: false,
+						message: 'Error uploading header image',
+					},
+					500,
+				);
+			}
+		}
+
+		const updatedUser = await db
+			.update(usersTable)
+			.set({
+				username,
+				firstName,
+				lastName,
+				bio,
+				profilePicture: profilePictureUrl,
+				header: headerUrl,
+				email,
+			})
+			.where(eq(usersTable.id, id))
+			.returning();
+
+		if (updatedUser.length === 0) {
+			return c.json(
+				{
+					success: false,
+					message: 'User not updated',
+				},
+				500,
+			);
+		}
+
+		return c.json({
+			success: true,
+			message: 'User updated successfully',
+			data: {
+				id: updatedUser[0].id,
+				email: updatedUser[0].email,
+				username: updatedUser[0].username,
+				firstName: updatedUser[0].firstName,
+				lastName: updatedUser[0].lastName,
+				bio: updatedUser[0].bio,
+				profilePicture: updatedUser[0].profilePicture,
+				header: updatedUser[0].header,
+				createdAt: updatedUser[0].createdAt,
+				updatedAt: updatedUser[0].updatedAt,
+			},
+		});
+	},
+);

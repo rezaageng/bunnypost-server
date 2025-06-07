@@ -8,6 +8,9 @@ export const usersTable = pgTable('users', {
 	password: varchar().notNull(),
 	firstName: varchar('first_name').notNull(),
 	lastName: varchar('last_name').notNull(),
+	bio: text('bio').default(''),
+	profilePicture: varchar('profile_picture').default(''),
+	header: varchar('header').default(''),
 	createdAt: timestamp('created_at').notNull().defaultNow(),
 	updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
