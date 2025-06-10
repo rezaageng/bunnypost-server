@@ -115,7 +115,16 @@ posts.get('/:id', async (c) => {
 					id: true,
 					content: true,
 					createdAt: true,
-					authorId: true,
+				},
+				with: {
+					author: {
+						columns: {
+							id: true,
+							username: true,
+							firstName: true,
+							lastName: true,
+						},
+					},
 				},
 			},
 			likes: {
