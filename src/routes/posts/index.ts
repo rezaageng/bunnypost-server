@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { db } from '../../db/index.js';
-import { count, eq, ilike, or } from 'drizzle-orm';
+import { count, desc, eq, ilike, or } from 'drizzle-orm';
 import { postsTable } from '../../db/schema.js';
 import { zValidator } from '@hono/zod-validator';
 import {
@@ -24,6 +24,7 @@ posts.get('/', async (c) => {
 						ilike(table.content, `%${searchParams}%`),
 					)
 			: undefined,
+		orderBy: (table) => desc(table.createdAt),
 		with: {
 			author: {
 				columns: {
